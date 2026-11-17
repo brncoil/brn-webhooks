@@ -89,7 +89,7 @@
 					W.flowChain(flow, 32),
 					h('div', { class: 'brnwh-flow-text' },
 						h('strong', null, flow.name),
-						h('span', { class: 'brnwh-muted' }, (tr ? tr.label : t('No trigger')) + ' · ' + t('%d steps', steps) + (conds ? ' · ' + t('%d conditions', conds) : ''))
+						h('span', { class: 'brnwh-muted' }, h('bdi', null, tr ? tr.label : t('No trigger')), ' · ', h('bdi', null, t('%d steps', steps)), conds ? [' · ', h('bdi', null, t('%d conditions', conds))] : null)
 					)
 				),
 				h('div', { class: 'brnwh-flow-meta' },

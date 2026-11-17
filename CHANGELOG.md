@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2 — 2026-11-17
+
+- Hebrew (RTL) admin: fields that mix Hebrew, English and {{placeholders}} now display in the right direction; flow list subtitles no longer scramble.
+
 ## 1.0.1 — 2026-11-17
 
 - Automatic updates keep the plugin active (WordPress re-activates the new version in the same request).

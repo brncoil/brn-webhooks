@@ -190,7 +190,8 @@ select.brnwh-input { padding-inline-end: 30px; -webkit-appearance: none; appeara
 .brnwh-tpl { position: relative; display: flex; align-items: stretch; }
 .brnwh-tpl > .brnwh-input { padding-inline-end: 40px; }
 .brnwh-tpl > textarea.brnwh-input + .brnwh-picker-btn { top: 6px; transform: none; }
-[dir="rtl"] .brnwh-tpl > .brnwh-input[dir="ltr"] { padding-left: 40px !important; padding-right: 12px !important; }
+[dir="rtl"] .brnwh-tpl > .brnwh-input[dir="ltr"],
+[dir="rtl"] .brnwh-tpl > .brnwh-input[dir="auto"] { padding-left: 40px !important; padding-right: 12px !important; }
 .brnwh-picker-btn { position: absolute; inset-inline-end: 6px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 7px; border: 0; background: var(--bw-primary-50); color: var(--bw-primary); display: grid; place-items: center; cursor: pointer; opacity: 0.85; transition: opacity 0.15s, background 0.15s; }
 .brnwh-picker-btn:hover { opacity: 1; background: var(--bw-primary-100); }
 .brnwh-input-group { display: flex; align-items: center; border: 1px solid var(--bw-border-strong); border-radius: var(--bw-radius-sm); background: #fff; transition: border-color 0.15s, box-shadow 0.15s; }

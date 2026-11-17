@@ -190,7 +190,7 @@
 					class: ['brnwh-input', f.type === 'code' || f.mono ? 'is-mono' : ''],
 					rows: f.rows || 4,
 					placeholder: isMask ? t('Saved — leave empty to keep the current value') : f.placeholder || '',
-					dir: f.type === 'code' ? 'ltr' : null,
+					dir: f.type === 'code' ? 'ltr' : 'auto',
 					spellcheck: f.type === 'code' ? 'false' : null,
 					onInput: function (e) {
 						values[f.key] = isMask && e.target.value === '' ? MASK : e.target.value;
@@ -229,7 +229,7 @@
 					type: isPw && !f.reveal ? 'password' : f.type === 'number' ? 'number' : 'text',
 					placeholder: isMask ? t('Saved — leave empty to keep the current value') : f.placeholder || '',
 					autocomplete: isPw ? 'new-password' : 'off',
-					dir: f.type === 'url' || isPw || f.mono ? 'ltr' : null,
+					dir: f.type === 'url' || isPw || f.mono ? 'ltr' : 'auto',
 					spellcheck: 'false',
 					onInput: function (e) {
 						let v = e.target.value;
@@ -399,7 +399,7 @@
 			clear(box);
 			list.forEach(function (row, i) {
 				const k = h('input', { class: 'brnwh-input is-mono', dir: 'ltr', placeholder: f.key_placeholder || t('key'), value: row.key || '', onInput: function (e) { row.key = e.target.value; changed(f.key); } });
-				const v = h('input', { class: 'brnwh-input', placeholder: f.value_placeholder || t('value or {{field}}'), value: row.value || '', onInput: function (e) { row.value = e.target.value; changed(f.key); } });
+				const v = h('input', { class: 'brnwh-input', dir: 'auto', placeholder: f.value_placeholder || t('value or {{field}}'), value: row.value || '', onInput: function (e) { row.value = e.target.value; changed(f.key); } });
 				box.appendChild(h('div', { class: 'brnwh-kv-row' }, k, withPicker(v, ctx, f.template !== false), W.iconBtn('x', { title: t('Remove'), onClick: function () { list.splice(i, 1); draw(); changed(f.key); } })));
 			});
 			box.appendChild(
@@ -443,7 +443,7 @@
 				return;
 			}
 			cols.forEach(function (col) {
-				const input = h('input', { class: 'brnwh-input', placeholder: t('Leave empty to skip'), value: col.value || '', onInput: function (e) { col.value = e.target.value; changed(f.key); } });
+				const input = h('input', { class: 'brnwh-input', dir: 'auto', placeholder: t('Leave empty to skip'), value: col.value || '', onInput: function (e) { col.value = e.target.value; changed(f.key); } });
 				box.appendChild(h('div', { class: 'brnwh-map-row' }, h('div', { class: 'brnwh-map-col' }, h('span', { class: 'brnwh-map-letter' }, col.letter || ''), h('span', { class: 'brnwh-map-name' }, col.column)), icon(W.boot.rtl ? 'arrowLeft' : 'arrowRight', 14), withPicker(input, ctx, true)));
 			});
 		}
@@ -549,7 +549,7 @@
 					);
 					const op = h('select', { class: 'brnwh-input', onChange: function (e) { r.op = e.target.value; draw(); fire(); } }, OPS.map(function (o) { return h('option', { value: o[0] }, t(o[1])); }));
 					op.value = r.op || 'equals';
-					const value = UNARY.indexOf(r.op) >= 0 ? h('div', { class: 'brnwh-cond-novalue' }) : withPicker(h('input', { class: 'brnwh-input', placeholder: t('value'), value: r.value || '', onInput: function (e) { r.value = e.target.value; fire(); } }), ctx, true);
+					const value = UNARY.indexOf(r.op) >= 0 ? h('div', { class: 'brnwh-cond-novalue' }) : withPicker(h('input', { class: 'brnwh-input', dir: 'auto', placeholder: t('value'), value: r.value || '', onInput: function (e) { r.value = e.target.value; fire(); } }), ctx, true);
 					rows.appendChild(
 						h('div', { class: 'brnwh-cond-row' },
 							h('div', { class: 'brnwh-tpl' }, field, pick),
