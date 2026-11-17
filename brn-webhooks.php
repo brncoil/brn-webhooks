@@ -3,7 +3,7 @@
  * Plugin Name:       BRN Webhooks
  * Plugin URI:        https://github.com/brncoil/brn-webhooks
  * Description:       Automations without Zapier or Make. Connect site forms (Elementor, Contact Form 7, WPForms, Gravity Forms, Fluent Forms), incoming webhooks, Facebook Lead Ads, WooCommerce and WordPress events to Google Sheets, Microsoft 365 Excel, Meta Conversions API, Slack, Telegram, email and any HTTP API — with conditions, logs and retries.
- * Version:           1.0.0
+ * Version:           1.0.1
  * Requires at least: 6.5
  * Requires PHP:      7.4
  * Author:            BRN
@@ -19,7 +19,14 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'BRNWH_VERSION', '1.0.0' );
+// Already loaded in this request (e.g. WordPress re-activating the plugin right after an
+// automatic update includes the new file while the old one is in memory): do nothing, so the
+// activation check sees no "already defined" warnings and keeps the plugin active.
+if ( defined( 'BRNWH_VERSION' ) ) {
+	return;
+}
+
+define( 'BRNWH_VERSION', '1.0.1' );
 define( 'BRNWH_DB_VERSION', '1' );
 define( 'BRNWH_FILE', __FILE__ );
 define( 'BRNWH_DIR', plugin_dir_path( __FILE__ ) );
