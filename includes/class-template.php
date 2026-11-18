@@ -360,8 +360,42 @@ class Template {
 				return '' === $s ? '' : $a0 . $s;
 			case 'suffix':
 				return '' === $s ? '' : $s . $a0;
+			case 'add':
+			case 'subtract':
+			case 'multiply':
+			case 'divide':
+				$x = self::to_number( $s );
+				$y = self::to_number( is_numeric( trim( $a0 ) ) ? $a0 : self::stringify( self::lookup( trim( $a0 ), $vars ) ) );
+				if ( 'add' === $name ) {
+					$r = $x + $y;
+				} elseif ( 'subtract' === $name ) {
+					$r = $x - $y;
+				} elseif ( 'multiply' === $name ) {
+					$r = $x * $y;
+				} else {
+					$r = 0.0 === (float) $y ? '' : $x / $y;
+				}
+				return is_float( $r ) && floor( $r ) == $r && abs( $r ) < PHP_INT_MAX ? (int) $r : $r; // phpcs:ignore Universal.Operators.StrictComparisons.LooseEqual
+			case 'round':
+				return round( self::to_number( $s ), (int) $a0 );
+			case 'abs':
+				return abs( self::to_number( $s ) );
 		}
 		return $value;
+	}
+
+	/**
+	 * Parse a loosely formatted number ("1,234.50 ₪" -> 1234.5).
+	 *
+	 * @param mixed $s Value.
+	 * @return float|int
+	 */
+	public static function to_number( $s ) {
+		$s = preg_replace( '/[^\d.\-]/', '', (string) $s );
+		if ( '' === $s || '-' === $s || ! is_numeric( $s ) ) {
+			return 0;
+		}
+		return false === strpos( $s, '.' ) ? (int) $s : (float) $s;
 	}
 
 	/**

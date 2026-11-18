@@ -173,27 +173,7 @@ class Flows {
 			$out['conditions'] = Conditions::sanitize( $in['conditions'] );
 		}
 		if ( isset( $in['actions'] ) && is_array( $in['actions'] ) ) {
-			$actions = array();
-			foreach ( array_slice( array_values( $in['actions'] ), 0, 30 ) as $a ) {
-				if ( ! is_array( $a ) ) {
-					continue;
-				}
-				$type = isset( $a['type'] ) ? sanitize_key( (string) $a['type'] ) : '';
-				if ( '' !== $type && ! Registry::action( $type ) ) {
-					continue;
-				}
-				$actions[] = array(
-					'id'                => isset( $a['id'] ) && preg_match( '/^[a-z0-9]{4,32}$/', (string) $a['id'] ) ? (string) $a['id'] : Util::uid(),
-					'type'              => $type,
-					'name'              => isset( $a['name'] ) ? substr( sanitize_text_field( (string) $a['name'] ), 0, 190 ) : '',
-					'connection_id'     => isset( $a['connection_id'] ) ? absint( $a['connection_id'] ) : 0,
-					'config'            => isset( $a['config'] ) && is_array( $a['config'] ) ? Util::clean_deep( $a['config'] ) : array(),
-					'enabled'           => ! isset( $a['enabled'] ) || (bool) $a['enabled'],
-					'continue_on_error' => ! empty( $a['continue_on_error'] ),
-					'conditions'        => Conditions::sanitize( isset( $a['conditions'] ) ? $a['conditions'] : array() ),
-				);
-			}
-			$out['actions'] = $actions;
+			$out['actions'] = self::sanitize_nodes( $in['actions'] );
 		}
 		if ( isset( $in['settings'] ) && is_array( $in['settings'] ) ) {
 			$s               = $in['settings'];
@@ -202,6 +182,12 @@ class Flows {
 				'retries' => isset( $s['retries'] ) ? max( 0, min( 10, (int) $s['retries'] ) ) : (int) Settings::get( 'default_retries' ),
 				'log'     => isset( $s['log'] ) && in_array( $s['log'], array( 'default', 'all', 'errors', 'none' ), true ) ? $s['log'] : 'default',
 			);
+			if ( isset( $s['trigger_ui'] ) && is_array( $s['trigger_ui'] ) ) {
+				$out['settings']['trigger_ui'] = array(
+					'x' => isset( $s['trigger_ui']['x'] ) ? max( -100000, min( 100000, (int) $s['trigger_ui']['x'] ) ) : 0,
+					'y' => isset( $s['trigger_ui']['y'] ) ? max( -100000, min( 100000, (int) $s['trigger_ui']['y'] ) ) : 0,
+				);
+			}
 		}
 		if ( array_key_exists( 'sample', $in ) ) {
 			$sample = $in['sample'];
@@ -215,6 +201,117 @@ class Flows {
 			$out['name'] = __( 'Untitled flow', 'brn-webhooks' );
 		}
 		return $out;
+	}
+
+	/**
+	 * Sanitize the step nodes of a flow.
+	 *
+	 * Canvas flows are a tree: every node has a parent ("trigger" or another node id) and the
+	 * port of the parent it hangs from (out, error, yes, no, p:<path id>, else, each, done).
+	 * Nodes without a parent are kept (drawn on the canvas) but never run. Older flows have
+	 * no "parent" keys at all and run as a simple chain.
+	 *
+	 * @param array $list Raw nodes.
+	 * @return array
+	 */
+	public static function sanitize_nodes( array $list ) {
+		$nodes = array();
+		$graph = false;
+		foreach ( array_slice( array_values( $list ), 0, 150 ) as $a ) {
+			if ( ! is_array( $a ) ) {
+				continue;
+			}
+			$type = isset( $a['type'] ) ? sanitize_key( (string) $a['type'] ) : '';
+			if ( '' !== $type && ! Registry::action( $type ) ) {
+				continue;
+			}
+			$node = array(
+				'id'                => isset( $a['id'] ) && preg_match( '/^[a-z0-9]{4,32}$/', (string) $a['id'] ) ? (string) $a['id'] : Util::uid(),
+				'type'              => $type,
+				'name'              => isset( $a['name'] ) ? substr( sanitize_text_field( (string) $a['name'] ), 0, 190 ) : '',
+				'connection_id'     => isset( $a['connection_id'] ) ? absint( $a['connection_id'] ) : 0,
+				'config'            => isset( $a['config'] ) && is_array( $a['config'] ) ? Util::clean_deep( $a['config'] ) : array(),
+				'enabled'           => ! isset( $a['enabled'] ) || (bool) $a['enabled'],
+				'continue_on_error' => ! empty( $a['continue_on_error'] ),
+				'conditions'        => Conditions::sanitize( isset( $a['conditions'] ) ? $a['conditions'] : array() ),
+			);
+			if ( 'router' === $type ) {
+				$node['config'] = self::sanitize_router( $node['config'] );
+			}
+			if ( array_key_exists( 'parent', $a ) ) {
+				$graph          = true;
+				$parent         = (string) $a['parent'];
+				$node['parent'] = ( 'trigger' === $parent || preg_match( '/^[a-z0-9]{4,32}$/', $parent ) ) ? $parent : '';
+				$port           = isset( $a['port'] ) ? (string) $a['port'] : 'out';
+				$node['port']   = preg_match( '/^[a-z0-9_:]{1,48}$/', $port ) ? $port : 'out';
+				$ui             = isset( $a['ui'] ) && is_array( $a['ui'] ) ? $a['ui'] : array();
+				$node['ui']     = array(
+					'x' => isset( $ui['x'] ) ? max( -100000, min( 100000, (int) $ui['x'] ) ) : 0,
+					'y' => isset( $ui['y'] ) ? max( -100000, min( 100000, (int) $ui['y'] ) ) : 0,
+				);
+			}
+			$nodes[] = $node;
+		}
+		if ( ! $graph ) {
+			return $nodes;
+		}
+		// Unique ids, existing parents, no cycles.
+		$ids = array();
+		foreach ( $nodes as $i => $n ) {
+			if ( isset( $ids[ $n['id'] ] ) ) {
+				$nodes[ $i ]['id'] = Util::uid();
+			}
+			$ids[ $nodes[ $i ]['id'] ] = $i;
+		}
+		foreach ( $nodes as $i => $n ) {
+			if ( ! isset( $n['parent'] ) ) {
+				$nodes[ $i ]['parent'] = '';
+				$nodes[ $i ]['port']   = 'out';
+				$nodes[ $i ]['ui']     = array( 'x' => 0, 'y' => 0 );
+				continue;
+			}
+			if ( '' !== $n['parent'] && 'trigger' !== $n['parent'] && ! isset( $ids[ $n['parent'] ] ) ) {
+				$nodes[ $i ]['parent'] = '';
+			}
+		}
+		foreach ( $nodes as $i => $n ) {
+			$seen = array( $n['id'] => true );
+			$cur  = $nodes[ $i ]['parent'];
+			while ( '' !== $cur && 'trigger' !== $cur ) {
+				if ( isset( $seen[ $cur ] ) ) {
+					$nodes[ $i ]['parent'] = '';
+					break;
+				}
+				$seen[ $cur ] = true;
+				$cur          = $nodes[ $ids[ $cur ] ]['parent'];
+			}
+		}
+		return $nodes;
+	}
+
+	/**
+	 * Sanitize a Paths node config.
+	 *
+	 * @param array $c Config.
+	 * @return array
+	 */
+	private static function sanitize_router( array $c ) {
+		$paths = array();
+		foreach ( array_slice( isset( $c['paths'] ) && is_array( $c['paths'] ) ? array_values( $c['paths'] ) : array(), 0, 20 ) as $p ) {
+			if ( ! is_array( $p ) ) {
+				continue;
+			}
+			$paths[] = array(
+				'id'         => isset( $p['id'] ) && preg_match( '/^[a-z0-9]{2,32}$/', (string) $p['id'] ) ? (string) $p['id'] : Util::uid(),
+				'name'       => isset( $p['name'] ) ? substr( sanitize_text_field( (string) $p['name'] ), 0, 120 ) : '',
+				'conditions' => Conditions::sanitize( isset( $p['conditions'] ) ? $p['conditions'] : array() ),
+			);
+		}
+		return array(
+			'mode'  => isset( $c['mode'] ) && 'all' === $c['mode'] ? 'all' : 'first',
+			'else'  => ! isset( $c['else'] ) || (bool) $c['else'],
+			'paths' => $paths,
+		);
 	}
 
 	/**

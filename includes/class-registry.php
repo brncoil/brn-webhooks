@@ -82,6 +82,12 @@ class Registry {
 		}
 
 		foreach ( array(
+			new Actions\Filter(),
+			new Actions\Condition(),
+			new Actions\Router(),
+			new Actions\Delay(),
+			new Actions\Loop(),
+			new Actions\Formatter(),
 			new Actions\Webhook(),
 			new Actions\Google_Sheets(),
 			new Actions\Excel(),

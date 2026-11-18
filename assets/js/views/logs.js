@@ -35,23 +35,38 @@
 		);
 	}
 
+	function pathsTable(paths) {
+		return h('table', { class: 'brnwh-paths-table' },
+			h('tbody', null, paths.map(function (p) {
+				return h('tr', null,
+					h('td', { class: p.matched ? 'is-hit' : 'is-miss' }, icon(p.matched ? 'check' : p.checked === false ? 'right' : 'x', 13)),
+					h('td', null, h('bdi', null, p.name)),
+					h('td', { class: 'brnwh-muted' }, p.matched ? t('Taken') : p.checked === false ? t('Not checked (an earlier path matched)') : t('Rules not met'))
+				);
+			}))
+		);
+	}
+
 	/** One step of a run. */
 	W.renderStep = function (s, inline) {
 		const def = s.type === '_filter' ? null : W.integration('actions', s.type);
+		const depth = s.depth || 0;
 		const head = h('div', { class: 'brnwh-tl-head' },
 			s.type === '_filter' ? W.appIcon('filter', 28) : W.appIcon(def ? def.icon : s.type, 28, s.name),
 			h('strong', null, s.position ? t('Step %d', s.position + 1) + ' · ' : '', s.name || (def ? def.label : s.type)),
+			s.branch && !inline ? h('span', { class: 'brnwh-tl-branch' }, h('bdi', null, s.branch)) : null,
 			W.badge(s.status),
 			s.duration_ms !== undefined ? h('span', { class: 'brnwh-muted' }, W.fmtMs(s.duration_ms)) : null
 		);
 		const body = h('div', { class: 'brnwh-tl-body' },
 			s.error ? h('div', { class: 'brnwh-alert is-error' }, icon('alert', 15), h('span', null, s.error)) : null,
 			s.note ? h('p', { class: 'brnwh-muted brnwh-small' }, s.note) : null,
+			s.paths && s.paths.length ? pathsTable(s.paths) : null,
 			s.conditions && s.conditions.length ? condTable(s.conditions) : null,
-			s.output !== undefined && s.output !== null ? section(t('Output'), W.jsonView(s.output, { open: 2 }), inline || s.status === 'success') : null,
+			s.output !== undefined && s.output !== null && s.kind !== 'if' && s.kind !== 'router' ? section(t('Output'), W.jsonView(s.output, { open: 2 }), inline || s.status === 'success') : null,
 			(s.requests || []).length ? h('div', { class: 'brnwh-reqs' }, s.requests.map(requestView)) : null
 		);
-		return h('div', { class: ['brnwh-tl-item', 'is-' + s.status] }, h('span', { class: 'brnwh-tl-dot' }), head, body);
+		return h('div', { class: ['brnwh-tl-item', 'is-' + s.status, depth && !inline ? 'is-nested' : ''], style: depth && !inline ? 'margin-inline-start:' + Math.min(depth, 8) * 22 + 'px' : null }, h('span', { class: 'brnwh-tl-dot' }), head, body);
 	};
 
 	/** Whole run timeline. */
@@ -102,6 +117,24 @@
 			},
 		});
 		if (!log.is_test && log.flow_id) actions.push(replay);
+		if (log.status === 'waiting') {
+			const cont = W.btn(t('Continue now'), {
+				icon: 'play',
+				variant: 'primary',
+				onClick: function () {
+					W.busy(cont, async function () {
+						try {
+							await W.api('logs/' + log.id + '/retry', { method: 'POST' });
+							W.toast(t('Continued'));
+							W.views.logDetail(log.id);
+						} catch (e) {
+							W.errorToast(e);
+						}
+					});
+				},
+			});
+			actions.push(cont);
+		}
 		if (['failed', 'partial', 'retrying'].indexOf(log.status) >= 0 && !log.is_test) {
 			const retry = W.btn(t('Retry failed steps'), {
 				icon: 'retry',
@@ -136,7 +169,7 @@
 			h('span', null, icon('clock', 14), W.fmtDate(log.created_at)),
 			h('span', null, icon('zap', 14), W.fmtMs(log.duration_ms)),
 			log.attempts > 1 ? h('span', null, icon('retry', 14), t('%d attempts', log.attempts)) : null,
-			log.next_attempt_at ? h('span', null, icon('clock', 14), t('next retry %s', W.timeAgo(log.next_attempt_at))) : null,
+			log.next_attempt_at && log.status === 'waiting' ? h('span', null, icon('clock', 14), t('continues %s', W.timeAgo(log.next_attempt_at))) : log.next_attempt_at && log.status === 'retrying' ? h('span', null, icon('clock', 14), t('next retry %s', W.timeAgo(log.next_attempt_at))) : null,
 			log.meta && log.meta.ip ? h('span', { dir: 'ltr' }, 'IP ' + log.meta.ip) : null
 		);
 		W.page(
@@ -169,7 +202,7 @@
 		const flowSel = h('select', { class: 'brnwh-input is-sm', onChange: function (e) { state.flow_id = e.target.value; state.page = 1; load(); } }, h('option', { value: '' }, t('All flows')), flows.map(function (f) { return h('option', { value: String(f.id) }, f.name); }));
 		flowSel.value = String(state.flow_id);
 		const statusSel = h('select', { class: 'brnwh-input is-sm', onChange: function (e) { state.status = e.target.value; state.page = 1; load(); } },
-			[['', t('All statuses')], ['success', t('Success')], ['failed,partial', t('Failed')], ['retrying,queued,running', t('In progress')], ['filtered', t('Filtered')]].map(function (o) { return h('option', { value: o[0] }, o[1]); })
+			[['', t('All statuses')], ['success', t('Success')], ['failed,partial', t('Failed')], ['retrying,queued,running', t('In progress')], ['waiting', t('Waiting (delay)')], ['filtered', t('Filtered')]].map(function (o) { return h('option', { value: o[0] }, o[1]); })
 		);
 
 		async function load() {

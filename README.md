@@ -1,8 +1,8 @@
 # BRN Webhooks
 
 Self-hosted automations for WordPress — BRN's replacement for Zapier and Make.
-Each site gets a visual flow builder: **trigger → conditions → actions**, with logs, retries and
-encrypted credentials. Updates are delivered from this repository's GitHub releases.
+Each site gets a visual canvas builder: a trigger, then a tree of actions and logic — **If / else,
+Paths, Filter, Delay, Loop, Formatter** and error paths — with logs, retries and encrypted credentials. Updates are delivered from this repository's GitHub releases.
 
 ## What it does
 
@@ -16,7 +16,9 @@ encrypted credentials. Updates are delivered from this repository's GitHub relea
 | WooCommerce order status | Slack, Telegram |
 | New WordPress user, content published | |
 
-- **Conditions** on the flow and per step (AND/OR groups, 20+ operators).
+- **Logic steps**: If / else, Paths (switch with an Otherwise path), Filter, Delay (parks the run and resumes it),
+  Loop (for each item), Formatter (values, lookup table, math, dates, split), and an error path on every action.
+- **Conditions** with AND/OR groups and 20+ operators.
 - **Templates**: `{{email}}`, `{{name|upper}}`, `{{phone|phone:972}}`, `{{date|date:d/m/Y}}`,
   previous step outputs `{{_steps.1.body.id}}`, `{{_all_table}}`, and more.
 - **Field picker** fed by real captured data ("Listen for data") and form definitions.
@@ -31,14 +33,11 @@ encrypted credentials. Updates are delivered from this repository's GitHub relea
 
 1. Download `brn-webhooks.zip` from the latest [release](https://github.com/brncoil/brn-webhooks/releases)
    and upload it in **Plugins → Add New → Upload Plugin**.
-2. The repository is **private**, so each site needs a GitHub token to receive updates. Either:
-   - add to `wp-config.php`: `define( 'BRNWH_GITHUB_TOKEN', 'github_pat_…' );`, or
-   - paste it in **Webhooks → Settings → Updates**.
+2. Activate it. That's all — updates arrive automatically from this (public) repository, and saved
+   credentials are encrypted with the site's own WordPress keys. Nothing to add to `wp-config.php`.
 
-   Use a fine-grained token with **read-only "Contents"** access to this repository only.
-   (If the repository is ever made public, no token is needed.)
-3. Recommended: `define( 'BRNWH_ENCRYPTION_KEY', '<random 64 chars>' );` in `wp-config.php`, so stored
-   credentials survive a change of the WordPress salts.
+   Optional, advanced: `define( 'BRNWH_ENCRYPTION_KEY', '<random 64 chars>' );` keeps stored credentials
+   readable even if the WordPress salts are ever changed.
 
 ## Releasing a new version
 

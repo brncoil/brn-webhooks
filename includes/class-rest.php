@@ -373,41 +373,25 @@ class Rest {
 			return $in;
 		}
 		list( $flow, $data ) = $in;
-		$index = isset( $b['index'] ) ? (int) $b['index'] : 0;
-		if ( ! isset( $flow['actions'][ $index ] ) ) {
-			return new \WP_Error( 'brnwh_bad_step', __( 'Step not found.', 'brn-webhooks' ), array( 'status' => 400 ) );
+		$outputs             = isset( $b['step_outputs'] ) && is_array( $b['step_outputs'] ) ? $b['step_outputs'] : array();
+		$node_id             = isset( $b['step_id'] ) ? (string) $b['step_id'] : '';
+		if ( '' === $node_id && isset( $b['index'] ) ) {
+			// Older editor: step index + outputs by position.
+			$index = (int) $b['index'];
+			if ( ! isset( $flow['actions'][ $index ] ) ) {
+				return new \WP_Error( 'brnwh_bad_step', __( 'Step not found.', 'brn-webhooks' ), array( 'status' => 400 ) );
+			}
+			$node_id = $flow['actions'][ $index ]['id'];
+			$by_id   = array();
+			foreach ( $flow['actions'] as $i => $a ) {
+				if ( isset( $outputs[ $i + 1 ] ) ) {
+					$by_id[ $a['id'] ] = $outputs[ $i + 1 ];
+				}
+			}
+			$outputs = $by_id;
 		}
-		$step                        = $flow['actions'][ $index ];
-		$step['enabled']             = true;
-		$step['conditions']          = Conditions::sanitize( array() );
-		$prior                       = array();
-		$outputs                     = isset( $b['step_outputs'] ) && is_array( $b['step_outputs'] ) ? $b['step_outputs'] : array();
-		foreach ( array_slice( $flow['actions'], 0, $index ) as $i => $a ) {
-			$prior[] = array(
-				'action_id' => $a['id'],
-				'status'    => 'success',
-				'type'      => $a['type'],
-				'name'      => $a['name'],
-				'position'  => $i + 1,
-				'output'    => isset( $outputs[ $i + 1 ] ) ? Util::clean_deep( $outputs[ $i + 1 ] ) : null,
-				'note'      => __( 'Not run (single step test).', 'brn-webhooks' ),
-			);
-		}
-		$flow['actions']    = array_merge( array_slice( $flow['actions'], 0, $index ), array( $step ) );
-		$flow['conditions'] = Conditions::sanitize( array() );
-		$run_id             = Logs::create(
-			array(
-				'flow_id'      => $flow['id'],
-				'flow_name'    => $flow['name'],
-				'trigger_type' => $flow['trigger_type'],
-				'status'       => 'running',
-				'is_test'      => true,
-				'input'        => $data,
-				'meta'         => array( 'source' => 'test_step' ),
-			)
-		);
-		$flow['settings']['retries'] = 0;
-		return $this->out( Engine::execute( $run_id, $flow, $data, $prior, 0, true, array( 'source' => 'test_step' ) ) );
+		$log = Engine::test_step( $flow, $data, $node_id, $outputs );
+		return is_wp_error( $log ) ? $log : $this->out( $log );
 	}
 
 	/**

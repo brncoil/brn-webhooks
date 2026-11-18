@@ -398,7 +398,7 @@
 		function draw() {
 			clear(box);
 			list.forEach(function (row, i) {
-				const k = h('input', { class: 'brnwh-input is-mono', dir: 'ltr', placeholder: f.key_placeholder || t('key'), value: row.key || '', onInput: function (e) { row.key = e.target.value; changed(f.key); } });
+				const k = h('input', { class: 'brnwh-input is-mono', dir: 'auto', placeholder: f.key_placeholder || t('key'), value: row.key || '', onInput: function (e) { row.key = e.target.value; changed(f.key); } });
 				const v = h('input', { class: 'brnwh-input', dir: 'auto', placeholder: f.value_placeholder || t('value or {{field}}'), value: row.value || '', onInput: function (e) { row.value = e.target.value; changed(f.key); } });
 				box.appendChild(h('div', { class: 'brnwh-kv-row' }, k, withPicker(v, ctx, f.template !== false), W.iconBtn('x', { title: t('Remove'), onClick: function () { list.splice(i, 1); draw(); changed(f.key); } })));
 			});

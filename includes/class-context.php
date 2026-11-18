@@ -72,14 +72,38 @@ class Context {
 	}
 
 	/**
-	 * Store a step output.
+	 * Current loop item ({{_loop.*}}), or null outside loops.
 	 *
-	 * @param int   $position 1-based.
-	 * @param mixed $output   Output.
+	 * @var array|null
 	 */
-	public function set_step( $position, $output ) {
-		$this->steps[ (int) $position ] = $output;
-		$this->vars                     = null;
+	public $loop = null;
+
+	/**
+	 * Store a step output. Available as {{_steps.<node id>.x}} and, for older flows, by position
+	 * ({{_steps.2.x}}).
+	 *
+	 * @param int|null $position 1-based position in the node list (null = none).
+	 * @param mixed    $output   Output.
+	 * @param string   $id       Node id.
+	 */
+	public function set_step( $position, $output, $id = '' ) {
+		if ( null !== $position && $position > 0 ) {
+			$this->steps[ (int) $position ] = $output;
+		}
+		if ( '' !== (string) $id ) {
+			$this->steps[ (string) $id ] = $output;
+		}
+		$this->vars = null;
+	}
+
+	/**
+	 * Enter / leave a loop iteration.
+	 *
+	 * @param array|null $loop {item, index, count, first, last} or null.
+	 */
+	public function set_loop( $loop ) {
+		$this->loop = $loop;
+		$this->vars = null;
 	}
 
 	/**
@@ -122,6 +146,9 @@ class Context {
 					'_ts'    => time(),
 				)
 			);
+			if ( null !== $this->loop ) {
+				$this->vars['_loop'] = $this->loop;
+			}
 		}
 		return $this->vars;
 	}

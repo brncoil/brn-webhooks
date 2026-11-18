@@ -15,8 +15,8 @@ defined( 'ABSPATH' ) || exit;
  * - The plugin header declares "Update URI: https://github.com/brncoil/brn-webhooks", so
  *   WordPress asks us (update_plugins_github.com) instead of wordpress.org.
  * - The release must carry an asset named brn-webhooks.zip (built by .github/workflows/release.yml).
- * - Private repository: define BRNWH_GITHUB_TOKEN in wp-config.php (or save a token in Settings);
- *   the package is then downloaded through the API with the token.
+ * - The repository is public, so no configuration is needed. (Should it ever become private again,
+ *   define BRNWH_GITHUB_TOKEN in wp-config.php and the package is downloaded through the API.)
  * - Automatic updates are on by default (Settings → Updates).
  */
 class Updater {
@@ -210,7 +210,7 @@ class Updater {
 				return $tmp;
 			}
 		}
-		return new \WP_Error( 'brnwh_download', __( 'Could not download the update from GitHub. Check the GitHub token in BRN Webhooks → Settings.', 'brn-webhooks' ) );
+		return new \WP_Error( 'brnwh_download', __( 'Could not download the update from GitHub.', 'brn-webhooks' ) );
 	}
 
 	/**

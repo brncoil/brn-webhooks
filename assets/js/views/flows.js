@@ -7,6 +7,21 @@
 	const W = window.BRNWH;
 	const { h, t, icon } = W;
 
+	/** Icons of the flow's steps in run order (branches included), for lists. */
+	W.flowNodes = function (flow) {
+		const nodes = (flow.actions || []).filter(function (a) { return a.type; });
+		if (!nodes.length || !Object.prototype.hasOwnProperty.call(nodes[0], 'parent')) return nodes;
+		const out = [];
+		const walk = function (pid) {
+			nodes.filter(function (a) { return a.parent === pid; }).forEach(function (a) {
+				out.push(a);
+				walk(a.id);
+			});
+		};
+		walk('trigger');
+		return out;
+	};
+
 	W.flowChain = function (flow, size) {
 		const s = size || 30;
 		const tr = W.integration('triggers', flow.trigger_type);
@@ -15,11 +30,14 @@
 			out.push(h('span', { class: 'brnwh-chain-arrow' }, icon(W.boot.rtl ? 'left' : 'right', 13)));
 			out.push(W.appIcon('filter', Math.round(s * 0.8)));
 		}
-		(flow.actions || []).forEach(function (a) {
+		const list = W.flowNodes(flow);
+		list.slice(0, 6).forEach(function (a) {
 			const ac = W.integration('actions', a.type);
+			const logic = ac && ac.kind && ac.kind !== 'action';
 			out.push(h('span', { class: 'brnwh-chain-arrow' }, icon(W.boot.rtl ? 'left' : 'right', 13)));
-			out.push(W.appIcon(ac ? ac.icon : a.type, s, ac ? ac.label : a.type));
+			out.push(W.appIcon(ac ? ac.icon : a.type, logic ? Math.round(s * 0.8) : s, ac ? ac.label : a.type));
 		});
+		if (list.length > 6) out.push(h('span', { class: 'brnwh-chain-more' }, '+' + (list.length - 6)));
 		return h('div', { class: 'brnwh-chain' }, out);
 	};
 
@@ -80,7 +98,7 @@
 
 		function row(flow) {
 			const tr = W.integration('triggers', flow.trigger_type);
-			const steps = (flow.actions || []).length;
+			const steps = W.flowNodes(flow).length;
 			const conds = W.conditionsCount(flow.conditions);
 			return h(
 				'div',

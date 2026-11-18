@@ -119,7 +119,7 @@ class Logs {
 	public static function claim( $id ) {
 		global $wpdb;
 		// next_attempt_at doubles as a 15-minute lease while running, so crashed workers can be recovered.
-		$n = $wpdb->query( $wpdb->prepare( 'UPDATE ' . self::table() . " SET status = 'running', next_attempt_at = %s WHERE id = %d AND status IN ('queued','retrying')", Util::now( 900 ), (int) $id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$n = $wpdb->query( $wpdb->prepare( 'UPDATE ' . self::table() . " SET status = 'running', next_attempt_at = %s WHERE id = %d AND status IN ('queued','retrying','waiting')", Util::now( 900 ), (int) $id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		return 1 === (int) $n;
 	}
 
@@ -231,7 +231,7 @@ class Logs {
 	public static function clear( array $args ) {
 		global $wpdb;
 		list( $where, $params ) = self::where( $args );
-		$where                  = ( $where ? $where . ' AND ' : 'WHERE ' ) . "status NOT IN ('queued','running','retrying')";
+		$where                  = ( $where ? $where . ' AND ' : 'WHERE ' ) . "status NOT IN ('queued','running','retrying','waiting')";
 		$sql                    = 'DELETE FROM ' . self::table() . ' ' . $where;
 		return (int) ( $params ? $wpdb->query( $wpdb->prepare( $sql, $params ) ) : $wpdb->query( $sql ) ); // phpcs:ignore WordPress.DB.PreparedSQL
 	}
@@ -244,9 +244,7 @@ class Logs {
 	public static function purge( $days ) {
 		global $wpdb;
 		$cutoff = Util::now( -DAY_IN_SECONDS * max( 1, (int) $days ) );
-		$wpdb->query( $wpdb->prepare( 'DELETE FROM ' . self::table() . " WHERE created_at < %s AND status NOT IN ('queued','running','retrying') LIMIT 5000", $cutoff ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		// Test runs interrupted mid-request stay "running" forever otherwise.
-		$wpdb->query( $wpdb->prepare( 'DELETE FROM ' . self::table() . ' WHERE is_test = 1 AND created_at < %s LIMIT 5000', Util::now( -DAY_IN_SECONDS ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM ' . self::table() . " WHERE created_at < %s AND status NOT IN ('queued','running','retrying','waiting') LIMIT 5000", $cutoff ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		// Test runs interrupted mid-request stay "running" forever otherwise.
 		$wpdb->query( $wpdb->prepare( 'DELETE FROM ' . self::table() . ' WHERE is_test = 1 AND created_at < %s LIMIT 5000', Util::now( -DAY_IN_SECONDS ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
@@ -262,7 +260,7 @@ class Logs {
 		$table = self::table();
 		$ids   = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT id FROM {$table} WHERE (status = 'queued' AND created_at <= %s) OR (status = 'retrying' AND next_attempt_at <= %s) ORDER BY id ASC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT id FROM {$table} WHERE (status = 'queued' AND created_at <= %s) OR (status IN ('retrying','waiting') AND next_attempt_at <= %s) ORDER BY id ASC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				Util::now( -60 ),
 				Util::now(),
 				(int) $limit
@@ -317,7 +315,7 @@ class Logs {
 		$fail24  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE created_at >= %s AND is_test = 0 AND status IN ('failed','partial')", $day_ago ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$ok7     = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE created_at >= %s AND is_test = 0 AND status = 'success'", $week ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$all7    = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE created_at >= %s AND is_test = 0 AND status IN ('success','failed','partial')", $week ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$queue   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE status IN ('queued','running','retrying') AND is_test = 0" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$queue   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE status IN ('queued','running','retrying','waiting') AND is_test = 0" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$avg     = (int) $wpdb->get_var( $wpdb->prepare( "SELECT AVG(duration_ms) FROM {$table} WHERE created_at >= %s AND is_test = 0 AND status = 'success'", $week ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		return array(

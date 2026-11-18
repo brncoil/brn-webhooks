@@ -167,7 +167,12 @@
 		telegram: ['#229ed9', '<g ' + W_ + '><path d="m21 4-18 7 6 2 2 6 3.5-4.5L19 18z"/><path d="m9 13 9-6"/></g>'],
 		key: ['#475569', '<g ' + W_ + '><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8M16 7l2.5 2.5"/></g>'],
 		http_auth: null,
-		filter: ['#0ea5e9', '<path d="M20 4H4l6.5 7.7V18l3 1.5v-7.8z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/>'],
+		filter: ['linear-gradient(135deg,#38bdf8,#0284c7)', '<path d="M20 4H4l6.5 7.7V18l3 1.5v-7.8z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/>'],
+		if: ['linear-gradient(135deg,#fbbf24,#ea8a0c)', '<g ' + W_ + '><path d="M12 3.5 20.5 12 12 20.5 3.5 12z"/><path d="M10 10.2a2 2 0 1 1 2.6 1.9c-.4.2-.6.5-.6.9v.4M12 15.6h.01"/></g>'],
+		router: ['linear-gradient(135deg,#a78bfa,#7c3aed)', '<g ' + W_ + '><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v10M12 10c-5 0-7 3-7 7M12 10c5 0 7 3 7 7"/></g>'],
+		delay: ['linear-gradient(135deg,#94a3b8,#475569)', '<g ' + W_ + '><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4.2l2.6 1.6M9.5 3h5"/></g>'],
+		loop: ['linear-gradient(135deg,#2dd4bf,#0f9488)', '<g ' + W_ + '><path d="M17 2.5 20.5 6 17 9.5"/><path d="M3.5 11.5V10a4 4 0 0 1 4-4h13"/><path d="M7 21.5 3.5 18 7 14.5"/><path d="M20.5 12.5V14a4 4 0 0 1-4 4h-13"/></g>'],
+		formatter: ['linear-gradient(135deg,#f472b6,#db2777)', '<g ' + W_ + '><path d="M5 7V5h14v2M12 5v14M9 19h6"/></g>'],
 	};
 	const ALIAS = { meta_leads: 'meta', meta_capi: 'meta', woo_order: 'woocommerce', wp_user: 'wordpress', wp_post: 'wordpress', google: 'google_sheets', microsoft: 'excel', http_auth: 'key' };
 
@@ -558,6 +563,7 @@
 		failed: ['Failed', 'err'],
 		partial: ['Partial', 'warn'],
 		retrying: ['Retrying', 'warn'],
+		waiting: ['Waiting', 'info'],
 		queued: ['Queued', 'muted'],
 		running: ['Running', 'info'],
 		filtered: ['Filtered', 'muted'],

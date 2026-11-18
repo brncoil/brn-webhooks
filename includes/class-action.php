@@ -15,6 +15,16 @@ defined( 'ABSPATH' ) || exit;
 abstract class Action extends Integration {
 
 	/**
+	 * Node kind on the canvas: action (default) or a logic node handled by the engine
+	 * itself: filter | if | router | delay | loop.
+	 *
+	 * @return string
+	 */
+	public function kind() {
+		return 'action';
+	}
+
+	/**
 	 * Connection type id required by this action (null = none).
 	 *
 	 * @return string|null
@@ -81,6 +91,7 @@ abstract class Action extends Integration {
 		$a                        = parent::to_array();
 		$a['connection_type']     = $this->connection_type();
 		$a['connection_optional'] = $this->connection_optional();
+		$a['kind']                = $this->kind();
 		return $a;
 	}
 }

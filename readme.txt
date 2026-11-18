@@ -4,7 +4,7 @@ Tags: webhooks, automation, zapier, google sheets, conversions api
 Requires at least: 6.5
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,11 +12,14 @@ Automations without Zapier or Make: forms, webhooks and WordPress events to Goog
 
 == Description ==
 
-Build flows (trigger → conditions → actions) right inside WordPress, with logs, retries and encrypted credentials.
+Build flows on a visual canvas — triggers, If / else, Paths, Filters, Delays, Loops and actions — right inside WordPress, with logs, retries and encrypted credentials.
 
 Updates are delivered from https://github.com/brncoil/brn-webhooks releases.
 
 == Changelog ==
+
+= 1.1.0 =
+* Visual canvas builder with If / else, Paths, Filter, Delay, Loop, Formatter and error paths.
 
 = 1.0.0 =
 * First release.

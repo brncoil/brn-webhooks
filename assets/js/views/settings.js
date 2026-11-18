@@ -46,7 +46,7 @@
 					h('div', null, h('span', { class: 'brnwh-muted' }, t('Latest on GitHub')), h('strong', null, info.latest ? 'v' + info.latest : '—')),
 					info.available ? h('a', { class: 'brnwh-btn is-primary', href: info.update_url }, icon('download', 16), h('span', null, t('Update now'))) : info.latest ? h('span', { class: 'brnwh-ok' }, icon('check', 15), t('Up to date')) : null
 				),
-				info.error ? h('div', { class: 'brnwh-alert is-warn' }, icon('alert', 15), h('span', null, info.error === 'not_found_or_private' ? t('Release not found. If the repository is private, add a GitHub token below.') : t('GitHub check failed: %s', info.error))) : null,
+				info.error ? h('div', { class: 'brnwh-alert is-warn' }, icon('alert', 15), h('span', null, info.error === 'not_found_or_private' ? t('No release found on GitHub yet.') : t('GitHub check failed: %s', info.error))) : null,
 				h('p', { class: 'brnwh-muted brnwh-small' }, t('Repository: %s', info.repo), info.checked_at ? ' · ' + t('checked %s', W.timeAgo(info.checked_at)) : '')
 			));
 		}
@@ -67,12 +67,6 @@
 				});
 			},
 		});
-
-		const tokenFields = W.renderFields(
-			[{ key: 'github_token', type: 'password', label: t('GitHub token (for a private repository)'), help: s.github_token_constant ? t('Defined in wp-config.php (BRNWH_GITHUB_TOKEN) — that value is used.') : t('Fine-grained token with read access to "Contents" of the repository. Or define BRNWH_GITHUB_TOKEN in wp-config.php.') }],
-			v,
-			{ onChange: mark }
-		);
 
 		const level = h('div', { class: 'brnwh-segment' });
 		function drawLevel() {
@@ -111,8 +105,7 @@
 				h('div', { class: 'brnwh-page-head' }, h('div', null, h('h1', null, t('Settings')), h('p', null, t('Logs, reliability, security and automatic updates.'))), saveBtn),
 				W.card(t('Updates'), h('div', null,
 					updBox,
-					row(t('Automatic updates'), tog('auto_update'), t('Install new versions from GitHub automatically (WordPress checks twice a day).')),
-					h('div', { class: 'brnwh-set-row is-stack' }, tokenFields)
+					row(t('Automatic updates'), tog('auto_update'), t('Install new versions from GitHub automatically (WordPress checks twice a day).'))
 				), { actions: checkBtn }),
 				W.card(t('Logs'), h('div', null,
 					row(t('What to log'), level, t('Runs waiting for a retry are always kept until they finish.')),
@@ -130,7 +123,7 @@
 					row(t('Max payload size'), num('max_payload_kb', 16, 20480, 'KB')),
 					row(t('Allow requests to internal addresses'), tog('allow_internal_urls'), t('Off = HTTP steps cannot call localhost / private network IPs (SSRF protection). Turn on only if you need to call a server on your network.')),
 					row(t('Trust proxy headers'), tog('trust_proxy'), t('Use X-Forwarded-For / CF-Connecting-IP for IP allowlists. Enable only behind Cloudflare or a trusted proxy.')),
-					row(t('Encryption key'), s.encryption_constant ? h('span', { class: 'brnwh-ok' }, icon('shield', 15), t('BRNWH_ENCRYPTION_KEY is defined')) : h('span', { class: 'brnwh-muted' }, icon('lock', 15), ' ', t('Using the site salts')), t('Tip: define BRNWH_ENCRYPTION_KEY in wp-config.php so credentials survive a salt change.'))
+					row(t('Encryption key'), s.encryption_constant ? h('span', { class: 'brnwh-ok' }, icon('shield', 15), t('BRNWH_ENCRYPTION_KEY is defined')) : h('span', { class: 'brnwh-muted' }, icon('lock', 15), ' ', t('Automatic (site keys)')), t('Automatic — nothing to set up. Saved credentials are encrypted with the secret keys of this site.'))
 				)),
 				W.card(t('Advanced'), h('div', null,
 					row(t('Meta Graph API version'), metaVer, t('Used for the Conversions API and Lead Ads.')),
